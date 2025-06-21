@@ -1,7 +1,7 @@
 {
-  "nodes": [
+   "nodes": [
     {
-      "name": "HubSpot - Nuevo Contacto",
+      "name": "HubSpot - Nuevo contacto",
       "type": "n8n-nodes-base.hubspotTrigger",
       "parameters": {
         "resource": "contact",
