@@ -1,0 +1,20 @@
+{
+  "nodes": [
+    {
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "summarize",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "name": "OpenAI",
+      "type": "n8n-nodes-base.openAi",
+      "parameters": {
+        "operation": "complete",
+        "prompt": "Resumen: {{$json.text}}"
+      }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "nodes": [
+    {
+      "name": "Trello Trigger",
+      "type": "n8n-nodes-base.trelloTrigger",
+      "parameters": {
+        "models": ["card"]
+      }
+    },
+    {
+      "name": "Append to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "parameters": {
+        "operation": "append",
+        "documentId": "={{$env.SHEETS_ID}}",
+        "sheetName": "Trello",
+        "values": [
+          "={{$json.name}}",
+          "={{$json.id}}"
+        ]
+      }
+    }
+  ]
+}

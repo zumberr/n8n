@@ -1,0 +1,20 @@
+{
+  "nodes": [
+    {
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "sentiment",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "name": "OpenAI",
+      "type": "n8n-nodes-base.openAi",
+      "parameters": {
+        "operation": "complete",
+        "prompt": "Analiza el sentimiento: {{$json.text}}"
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "nodes": [
+    {
+      "name": "Cron",
+      "type": "n8n-nodes-base.cron",
+      "parameters": {
+        "triggerTimes": [{"hour": 9, "minute": 0}]
+      }
+    },
+    {
+      "name": "SendGrid",
+      "type": "n8n-nodes-base.sendGrid",
+      "parameters": {
+        "fromEmail": "marketing@example.com",
+        "to": "={{$env.CAMPAIGN_LIST}}",
+        "subject": "Boletín semanal",
+        "text": "Contenido del boletín"
+      }
+    }
+  ]
+}

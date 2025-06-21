@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {
+      "name": "Cron",
+      "type": "n8n-nodes-base.cron",
+      "parameters": {
+        "triggerTimes": [{"hour": 12, "minute": 0}]
+      }
+    },
+    {
+      "name": "Post to Twitter",
+      "type": "n8n-nodes-base.twitter",
+      "parameters": {
+        "resource": "tweet",
+        "operation": "create",
+        "text": "Nuevo artículo en el blog!"
+      }
+    },
+    {
+      "name": "Post to LinkedIn",
+      "type": "n8n-nodes-base.linkedIn",
+      "parameters": {
+        "operation": "share",
+        "text": "Nuevo artículo en el blog!"
+      }
+    }
+  ]
+}
