@@ -1,0 +1,44 @@
+{
+  "nodes": [
+    {
+      "name": "HubSpot - Nuevo Contacto",
+      "type": "n8n-nodes-base.hubspotTrigger",
+      "parameters": {
+        "resource": "contact",
+        "event": "contact.creation",
+        "filters": {
+          "propertyName": "lifecyclestage",
+          "operator": "EQ",
+          "value": "lead"
+        }
+      }
+    },
+    {
+      "name": "Agregar a Mailchimp",
+      "type": "n8n-nodes-base.mailchimp",
+      "parameters": {
+        "operation": "create",
+        "resource": "member",
+        "list": "{{$node['Configuración'].json['mailchimp_list_id']}}",
+        "email": "={{$node['HubSpot - Nuevo Contacto'].json['properties']['email']['value']}}",
+        "status": "subscribed"
+      }
+    },
+    {
+      "name": "Registrar en Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "parameters": {
+        "operation": "append",
+        "resource": "spreadsheet",
+        "documentId": "{{$node['Configuración'].json['sheet_id']}}",
+        "sheetName": "Contactos",
+        "values": [
+          "={{$node['HubSpot - Nuevo Contacto'].json['properties']['firstname']['value']}}",
+          "={{$node['HubSpot - Nuevo Contacto'].json['properties']['lastname']['value']}}",
+          "={{$node['HubSpot - Nuevo Contacto'].json['properties']['email']['value']}}",
+          "={{new Date().toISOString()}}"
+        ]
+      }
+    }
+  ]
+}
