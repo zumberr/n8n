@@ -1,0 +1,21 @@
+{
+  "nodes": [
+    {
+      "name": "GitHub Trigger",
+      "type": "n8n-nodes-base.githubTrigger",
+      "parameters": {
+        "events": ["issues"]
+      }
+    },
+    {
+      "name": "Slack Message",
+      "type": "n8n-nodes-base.slack",
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#dev",
+        "text": "Nuevo issue: {{$json.title}}"
+      }
+    }
+  ]
+}
