@@ -1,1 +1,192 @@
 
+{
+  "name": "WhatsApp IA Bot (Cloud API + OpenAI)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "whatsapp-in",
+        "responseMode": "responseNode",
+        "options": {
+          "responseData": "={{$json}}",
+          "responseCode": 200,
+          "allowUnauthorizedCerts": true,
+          "methods": ["GET","POST"]
+        }
+      },
+      "id": "Webhook_WhatsApp",
+      "name": "Webhook WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 3,
+      "position": [ -600, 0 ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"req\"]?.method || $json[\"headers\"]?.[\"request-method\"] || $json[\"headers\"]?.[\"x-forwarded-method\"]}}",
+              "operation": "equal",
+              "value2": "GET"
+            }
+          ]
+        }
+      },
+      "id": "IF_Method",
+      "name": "IF GET vs POST",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [ -380, 0 ]
+    },
+    {
+      "parameters": {
+        "responseBody": "={{$json[\"query\"]?.[\"hub.challenge\"] || $json[\"query\"]?.[\"hub.challenge\"][0] || \"\"}}",
+        "responseCode": 200
+      },
+      "id": "Respond_Verify",
+      "name": "Respond Verify (GET)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [ -160, -120 ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const entry = items[0].json.body?.entry?.[0];\nconst change = entry?.changes?.[0]?.value;\nconst msg = change?.messages?.[0];\nif (!msg || msg.type !== 'text') {\n  return [{ json: { skip: true, reason: 'no-text' } }];\n}\nconst text = msg.text?.body || '';\nconst waId = change?.contacts?.[0]?.wa_id;\nconst phoneNumberId = change?.metadata?.phone_number_id;\nreturn [{ json: { text, waId, phoneNumberId } }];"
+      },
+      "id": "Fn_Parse",
+      "name": "Parse WhatsApp",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [ -160, 120 ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json[\"skip\"]}}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "IF_Skip",
+      "name": "IF Skip?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [ 60, 120 ]
+    },
+    {
+      "parameters": {
+        "operation": "chat",
+        "model": "gpt-4o-mini",
+        "systemMessage": "Eres un asistente de WhatsApp útil y conciso. Responde en el mismo idioma que el usuario y dale soporte con lo indicado. Evita párrafos largos; usa máximo 5 líneas salvo que el usuario pida detalle.",
+        "messages": [
+          {
+            "text": "={{$json[\"text\"]}}",
+            "type": "user"
+          }
+        ]
+      },
+      "id": "OpenAI_Chat",
+      "name": "OpenAI (Chat)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 5,
+      "credentials": {
+        "openAiApi": {
+          "id": "<TU_CREDENCIAL_OPENAI>"
+        }
+      },
+      "position": [ 280, 120 ]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "headerAuth",
+        "requestMethod": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{$json[\"phoneNumberId\"]}}/messages",
+        "jsonParameters": true,
+        "options": {
+          "response": {
+            "response": "json"
+          }
+        },
+        "sendHeaders": true,
+        "headerParametersJson": "={\"Authorization\":\"Bearer {{$env[\\\"WHATSAPP_TOKEN\\\"]}}\",\"Content-Type\":\"application/json\"}",
+        "bodyParametersJson": "={\"messaging_product\":\"whatsapp\",\"to\":\"{{$json[\"waId\"]}}\",\"type\":\"text\",\"text\":{\"preview_url\":false,\"body\":\"{{ $json[\"data\"][0]?.[\"content\"] || $json[\"choices\"]?.[0]?.[\"message\"]?.[\"content\"] || $json[\"text\"] }}\"}}"
+      },
+      "id": "HTTP_Send",
+      "name": "Send WhatsApp Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 5,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "<TU_CREDENCIAL_HEADER_WHATSAPP>"
+        }
+      },
+      "position": [ 520, 120 ]
+    },
+    {
+      "parameters": {
+        "responseBody": "ok",
+        "responseCode": 200
+      },
+      "id": "Respond_Post",
+      "name": "Respond 200 (POST)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [ 760, 120 ]
+    }
+  ],
+  "connections": {
+    "Webhook WhatsApp": {
+      "main": [
+        [
+          { "node": "IF GET vs POST", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IF GET vs POST": {
+      "main": [
+        [
+          { "node": "Respond Verify (GET)", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Parse WhatsApp", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Parse WhatsApp": {
+      "main": [
+        [
+          { "node": "IF Skip?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IF Skip?": {
+      "main": [
+        [
+          { "node": "OpenAI (Chat)", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Respond 200 (POST)", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "OpenAI (Chat)": {
+      "main": [
+        [
+          { "node": "Send WhatsApp Reply", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Send WhatsApp Reply": {
+      "main": [
+        [
+          { "node": "Respond 200 (POST)", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": { "timezone": "America/Bogota" }
+}
